@@ -72,13 +72,13 @@ export default function Reports() {
               else if(item.status === 'Lost' || item.status === 'Disposed') colorClass = 'bg-red-100 border-red-500 border-t-4 text-red-700';
 
               return (
-                <div key={idx} className="flex flex-col items-center gap-2 group w-full max-w-[80px] z-10">
-                  <div className="opacity-0 group-hover:opacity-100 font-bold transition-opacity bg-neutral-800 text-white text-xs px-2 py-1 rounded -mb-1">
+                <div key={idx} className="flex flex-col items-center justify-end gap-1.5 group w-full max-w-[80px] z-10 h-48">
+                  <div className="opacity-0 group-hover:opacity-100 font-bold transition-opacity bg-neutral-800 text-white text-xs px-2 py-1 rounded shadow-sm">
                     {item.count}
                   </div>
                   <div 
-                    className={`w-full rounded-t-sm transition-all duration-1000 ${colorClass}`}
-                    style={{ height: `${heightPct}%`, minHeight: '10%' }}
+                    className={`w-full rounded-t transition-all duration-1000 ${colorClass}`}
+                    style={{ height: `${heightPct}%` }}
                   ></div>
                   <div className="text-xs font-semibold text-neutral-text-secondary -rotate-45 origin-top-left mt-2 whitespace-nowrap">
                     {item.status}

@@ -5,7 +5,9 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from accounts.models import Department
 from assets.models import AssetCategory, Asset, AssetStatusLog
-from allocations.models import Allocation
+from allocations.models import Allocation, TransferRequest, AssetBooking
+from maintenance.models import MaintenanceRequest
+from audits.models import AuditCycle, AuditEntry
 
 User = get_user_model()
 
@@ -69,6 +71,7 @@ class Command(BaseCommand):
                 self.stdout.write(f'Created Category: {c["name"]}')
 
         # 4. Assets
+        created_assets = []
         if Asset.objects.count() == 0:
             assets_to_create = [
                 {'name': 'MacBook Pro 16" M2', 'cat': 'Laptops', 'status': 'Available', 'cost': 2499.00},
@@ -89,10 +92,9 @@ class Command(BaseCommand):
                     cost=a['cost'],
                     purchase_date=timezone.now().date() - timedelta(days=random.randint(30, 365))
                 )
+                created_assets.append(asset)
                 self.stdout.write(f'Created Asset: {asset.tag} - {asset.name}')
                 
-                # We skip manual AssetStatusLog creation here because the view/serializer handles it
-                # or we can manually insert the initial log if created directly via ORM
                 AssetStatusLog.objects.create(
                     asset=asset,
                     new_status=a['status'],
@@ -116,5 +118,91 @@ class Command(BaseCommand):
                         is_active=True,
                         notes='Initial allocation'
                     )
+        else:
+            created_assets = list(Asset.objects.all())
+
+        # 5. Seed Maintenance Requests
+        if MaintenanceRequest.objects.count() == 0 and len(created_assets) > 0:
+            # Let's assign requests to some assets
+            laptop_asset = next((a for a in created_assets if 'ThinkPad' in a.name or 'MacBook' in a.name), created_assets[0])
+            vehicle_asset = next((a for a in created_assets if 'Ford' in a.name), created_assets[0])
+
+            MaintenanceRequest.objects.create(
+                asset=laptop_asset,
+                reported_by=User.objects.get(username='john.doe'),
+                issue_description='The screen occasionally flickers when opened beyond 90 degrees.',
+                status='In Progress',
+                priority='Medium'
+            )
+            MaintenanceRequest.objects.create(
+                asset=vehicle_asset,
+                reported_by=User.objects.get(username='bob.manager'),
+                issue_description='Annual standard maintenance service and oil change required.',
+                status='Open',
+                priority='Low'
+            )
+            self.stdout.write('Created Maintenance Requests.')
+
+        # 6. Seed Bookings
+        if AssetBooking.objects.count() == 0 and len(created_assets) > 0:
+            available_assets = [a for a in created_assets if a.status == 'Available']
+            if available_assets:
+                booking_asset = available_assets[0]
+                now = timezone.now()
+                # Booking 1: Today
+                AssetBooking.objects.create(
+                    asset=booking_asset,
+                    employee=User.objects.get(username='john.doe'),
+                    start_time=now + timedelta(hours=2),
+                    end_time=now + timedelta(hours=4),
+                    purpose='Client presentation and demo run.'
+                )
+                # Booking 2: Tomorrow
+                tomorrow = now + timedelta(days=1)
+                AssetBooking.objects.create(
+                    asset=booking_asset,
+                    employee=User.objects.get(username='bob.manager'),
+                    start_time=tomorrow.replace(hour=10, minute=0, second=0, microsecond=0),
+                    end_time=tomorrow.replace(hour=12, minute=0, second=0, microsecond=0),
+                    purpose='Q3 Financial reviews session.'
+                )
+                self.stdout.write('Created Asset Bookings.')
+
+        # 7. Seed Transfer Requests
+        if TransferRequest.objects.count() == 0 and len(created_assets) > 0:
+            allocated_assets = [a for a in created_assets if a.status == 'Allocated']
+            if allocated_assets:
+                transfer_asset = allocated_assets[0]
+                # Let's transfer it from John Doe to Bob Manager
+                from_user = User.objects.get(username='john.doe')
+                to_user = User.objects.get(username='bob.manager')
+                TransferRequest.objects.create(
+                    asset=transfer_asset,
+                    from_employee=from_user,
+                    to_employee=to_user,
+                    requested_by=from_user,
+                    status='Pending',
+                    reason='Bob needs this laptop for testing the new application server deployment.'
+                )
+                self.stdout.write('Created Transfer Request.')
+
+        # 8. Seed Audit Cycles & Entries
+        if AuditCycle.objects.count() == 0 and len(created_assets) > 0:
+            cycle = AuditCycle.objects.create(
+                name='Q3 2026 IT Asset Verification',
+                created_by=sys_admin,
+                start_date=timezone.now().date(),
+                end_date=timezone.now().date() + timedelta(days=30),
+                status='In Progress',
+                notes='Standard quarterly physical audit of high-value electronic equipment.'
+            )
+            for asset in created_assets:
+                AuditEntry.objects.create(
+                    audit_cycle=cycle,
+                    asset=asset,
+                    status='Pending'
+                )
+            self.stdout.write(f'Created Audit Cycle: {cycle.name} with {len(created_assets)} assets.')
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded database!'))
+
