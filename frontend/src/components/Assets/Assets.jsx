@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Package, Tag, FileText, ChevronRight, CheckCircle, XCircle, CornerDownLeft, UserPlus, ArrowRightLeft, Plus } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -7,6 +8,7 @@ export default function Assets() {
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   
   // Filters
   const [search, setSearch] = useState('');
@@ -208,9 +210,6 @@ export default function Assets() {
           <h2 className="text-2xl font-bold text-neutral-text-primary">Asset Directory</h2>
           <p className="text-neutral-text-secondary text-sm mt-1">Browse, search, and manage all company assets.</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg shadow-sm hover:bg-primary-700 transition-colors">
-          <Plus size={18} /> Register Asset
-        </button>
       </div>
 
       {/* Filters Bar */}
@@ -275,16 +274,30 @@ export default function Assets() {
             </thead>
             <tbody className="divide-y divide-neutral-border">
               {loading ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-neutral-text-secondary">
-                    Loading assets...
-                  </td>
-                </tr>
+                  [1,2,3,4,5,6].map(i => (
+                    <tr key={i}>
+                      <td className="px-6 py-4"><div className="skeleton h-5 w-20"></div></td>
+                      <td className="px-6 py-4">
+                        <div className="skeleton h-4 w-36 mb-1.5"></div>
+                        <div className="skeleton h-3 w-24"></div>
+                      </td>
+                      <td className="px-6 py-4"><div className="skeleton h-4 w-20"></div></td>
+                      <td className="px-6 py-4"><div className="skeleton h-5 w-16 rounded-full"></div></td>
+                      <td className="px-6 py-4 text-right flex justify-end">
+                        <div className="skeleton h-6 w-20 rounded"></div>
+                      </td>
+                    </tr>
+                  ))
               ) : assets.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-neutral-text-secondary">
-                    <Package size={32} className="mx-auto mb-3 opacity-50" />
-                    No assets match your search criteria.
+                  <td colSpan="5" className="px-6 py-16 text-center">
+                    <Package size={40} className="mx-auto mb-3 text-neutral-text-muted opacity-40" />
+                    <p className="font-semibold text-neutral-text-primary text-sm">No assets found</p>
+                    <p className="text-xs text-neutral-text-muted mt-1">
+                      {search || statusFilter || categoryFilter
+                        ? 'No assets match your current filters. Try adjusting or clearing them.'
+                        : 'No assets have been registered yet. Use the Register Asset button to get started.'}
+                    </p>
                   </td>
                 </tr>
               ) : (
@@ -322,7 +335,10 @@ export default function Assets() {
                           <CornerDownLeft size={14} /> Return
                         </button>
                       )}
-                      <button className="p-1 text-neutral-text-muted hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50 inline-flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                      <button 
+                        onClick={() => navigate(`/assets/${asset.id}`)}
+                        className="p-1 text-neutral-text-muted hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50 inline-flex items-center gap-1 opacity-0 group-hover:opacity-100"
+                      >
                         <FileText size={16} /> <span className="text-xs font-medium">Details</span> <ChevronRight size={16}/>
                       </button>
                     </td>
@@ -434,6 +450,13 @@ export default function Assets() {
           </div>
         </div>
       )}
+
+      {/* FAB */}
+      <button 
+        className="fixed bottom-6 right-6 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 hover:shadow-xl hover:-translate-y-1 transition-all z-40 font-semibold text-sm"
+      >
+        <Plus size={20} /> Register Asset
+      </button>
     </div>
   );
 }

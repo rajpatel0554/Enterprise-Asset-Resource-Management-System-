@@ -30,8 +30,53 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-neutral-text-secondary">Loading dashboard...</div>
+      <div className="space-y-6 flex flex-col h-full">
+        {/* Header skeleton */}
+        <div>
+          <div className="skeleton h-7 w-56 mb-2"></div>
+          <div className="skeleton h-4 w-72"></div>
+        </div>
+        {/* KPI cards skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white p-5 rounded-xl border border-neutral-border shadow-sm flex items-center gap-4">
+              <div className="skeleton w-12 h-12 rounded-full shrink-0"></div>
+              <div className="flex-1">
+                <div className="skeleton h-3 w-24 mb-2"></div>
+                <div className="skeleton h-7 w-16"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Alerts skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white border border-neutral-border rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-neutral-border bg-neutral-surface">
+              <div className="skeleton h-4 w-32"></div>
+            </div>
+            <div className="p-4 space-y-3">
+              {[1,2,3].map(i => (
+                <div key={i} className="skeleton h-14 w-full rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+          <div className="lg:col-span-1 bg-white border border-neutral-border rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-neutral-border bg-neutral-surface">
+              <div className="skeleton h-4 w-40"></div>
+            </div>
+            <div className="p-4 space-y-4">
+              {[1,2,3,4].map(i => (
+                <div key={i}>
+                  <div className="flex justify-between mb-1">
+                    <div className="skeleton h-3 w-20"></div>
+                    <div className="skeleton h-3 w-6"></div>
+                  </div>
+                  <div className="skeleton h-2 w-full rounded-full"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

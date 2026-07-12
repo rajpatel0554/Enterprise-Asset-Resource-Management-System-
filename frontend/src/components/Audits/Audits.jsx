@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Play, CheckCircle, XCircle, Search, FileText } from 'lucide-react';
+import { ClipboardList, Play, CheckCircle, XCircle, Search, FileText, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import ConfirmationModal from '../Shared/ConfirmationModal';
 
 export default function Audits() {
   const [cycles, setCycles] = useState([]);
@@ -15,6 +16,8 @@ export default function Audits() {
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const isAdminOrManager = currentUser?.role === 'Admin' || currentUser?.role === 'AssetManager';
   const { showToast } = useToast();
+
+  const [confirmComplete, setConfirmComplete] = useState(false); // for complete audit modal
 
   const fetchCycles = async () => {
     setLoading(true);
@@ -119,7 +122,7 @@ export default function Audits() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         {/* Left Col: Cycles List */}
-        <div className="lg:col-span-1 bg-white border border-neutral-border rounded-xl shadow-sm flex flex-col overflow-hidden">
+        <div className={`lg:col-span-1 bg-white border border-neutral-border rounded-xl shadow-sm flex flex-col overflow-hidden ${selectedCycle ? 'hidden lg:flex' : 'flex'}`}>
           <div className="p-4 border-b border-neutral-border bg-neutral-surface">
             <h3 className="font-semibold text-neutral-text-primary">Audit Cycles</h3>
           </div>
@@ -127,7 +130,11 @@ export default function Audits() {
             {loading ? (
               <div className="text-neutral-text-secondary text-sm">Loading cycles...</div>
             ) : cycles.length === 0 ? (
-              <div className="text-neutral-text-secondary text-sm text-center py-4">No audit cycles found.</div>
+              <div className="text-center py-8 px-4">
+                <ClipboardList size={36} className="mx-auto mb-2 text-neutral-text-muted opacity-30" />
+                <p className="text-sm font-semibold text-neutral-text-primary">No audit cycles yet</p>
+                <p className="text-xs text-neutral-text-muted mt-1">Create your first audit cycle using the '+ New Cycle' button above.</p>
+              </div>
             ) : (
               cycles.map(cycle => (
                 <div 
@@ -155,11 +162,17 @@ export default function Audits() {
         </div>
 
         {/* Right Col: Audit Entries / Details */}
-        <div className="lg:col-span-2 bg-white border border-neutral-border rounded-xl shadow-sm flex flex-col overflow-hidden">
+        <div className={`lg:col-span-2 bg-white border border-neutral-border rounded-xl shadow-sm flex flex-col overflow-hidden ${!selectedCycle ? 'hidden lg:flex' : 'flex'}`}>
           {selectedCycle ? (
             <>
               <div className="p-4 border-b border-neutral-border bg-neutral-surface flex justify-between items-center flex-wrap gap-2">
                 <div>
+                  <button 
+                    onClick={() => setSelectedCycle(null)}
+                    className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1 mb-1.5"
+                  >
+                    <ArrowLeft size={12} /> Back to Cycles List
+                  </button>
                   <h3 className="font-semibold text-neutral-text-primary">{selectedCycle.name}</h3>
                   <p className="text-xs text-neutral-text-secondary mt-0.5">Status: {selectedCycle.status}</p>
                 </div>
@@ -173,7 +186,7 @@ export default function Audits() {
                 )}
                 {isAdminOrManager && selectedCycle.status === 'In Progress' && (
                   <button 
-                    onClick={() => handleAction(`http://localhost:8000/api/audits/cycles/${selectedCycle.id}/complete/`, 'Audit Cycle Completed.')}
+                    onClick={() => setConfirmComplete(true)}
                     className="flex items-center gap-1 text-sm bg-status-success-bg text-status-success-text border border-green-200 px-3 py-1.5 rounded hover:bg-green-100 transition-colors"
                   >
                     <CheckCircle size={14} /> Complete Audit
@@ -292,6 +305,18 @@ export default function Audits() {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={confirmComplete}
+        title="Complete Audit Cycle"
+        message={`Are you sure you want to mark "${selectedCycle?.name}" as Complete? This will close the audit cycle and cannot be reversed.`}
+        confirmLabel="Yes, Complete"
+        onCancel={() => setConfirmComplete(false)}
+        onConfirm={() => {
+          handleAction(`http://localhost:8000/api/audits/cycles/${selectedCycle?.id}/complete/`, 'Audit Cycle Completed.');
+          setConfirmComplete(false);
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Layout from './components/Layout/Layout';
 import Login from './components/Auth/Login';
 import Dashboard from './components/Dashboard/Dashboard';
 import Assets from './components/Assets/Assets';
+import AssetDetail from './components/Assets/AssetDetail';
 import Allocations from './components/Allocations/Allocations';
 import Bookings from './components/Bookings/Bookings';
 import Maintenance from './components/Maintenance/Maintenance';
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="assets" element={<Assets />} />
+          <Route path="assets/:id" element={<AssetDetail />} />
           <Route path="allocations" element={<Allocations />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="maintenance" element={<Maintenance />} />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PenTool, Plus, CheckCircle, Clock, Search, Wrench, XCircle } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import ConfirmationModal from '../Shared/ConfirmationModal';
 
 export default function Maintenance() {
   const [requests, setRequests] = useState([]);
@@ -17,6 +18,8 @@ export default function Maintenance() {
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const { showToast } = useToast();
   const isAdminOrManager = currentUser?.role === 'Admin' || currentUser?.role === 'AssetManager';
+
+  const [confirmCancel, setConfirmCancel] = useState(null); // holds req.id to cancel
 
   const fetchData = async () => {
     setLoading(true);
@@ -119,21 +122,16 @@ export default function Maintenance() {
           <h2 className="text-2xl font-bold text-neutral-text-primary">Maintenance Workflows</h2>
           <p className="text-neutral-text-secondary text-sm mt-1">Track asset repairs, servicing, and technical issues.</p>
         </div>
-        <button 
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg shadow-sm hover:bg-primary-700 transition-colors"
-        >
-          <PenTool size={18} /> Raise Request
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="text-neutral-text-secondary text-sm">Loading requests...</div>
         ) : requests.length === 0 ? (
-          <div className="text-center text-neutral-text-secondary py-12 bg-white rounded-xl border border-neutral-border">
-            <Wrench size={32} className="mx-auto mb-3 opacity-50" />
-            <p>No maintenance requests found.</p>
+          <div className="text-center text-neutral-text-secondary py-16 bg-white rounded-xl border border-neutral-border">
+            <Wrench size={40} className="mx-auto mb-3 opacity-30" />
+            <p className="font-semibold text-neutral-text-primary text-sm">No maintenance requests</p>
+            <p className="text-xs text-neutral-text-muted mt-1">No maintenance requests found. Click '+ Raise Request' to report an issue.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -175,7 +173,7 @@ export default function Maintenance() {
                           <CheckCircle size={16} />
                         </button>
                       )}
-                      <button onClick={() => updateStatus(req.id, 'Cancelled')} className="text-status-danger-text hover:bg-status-danger-bg p-1.5 rounded transition-colors" title="Cancel Request">
+                      <button onClick={() => setConfirmCancel(req.id)} className="text-status-danger-text hover:bg-status-danger-bg p-1.5 rounded transition-colors" title="Cancel Request">
                         <XCircle size={16} />
                       </button>
                     </div>
@@ -186,6 +184,19 @@ export default function Maintenance() {
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmCancel !== null}
+        danger
+        title="Cancel Maintenance Request"
+        message="Are you sure you want to cancel this maintenance request? This action cannot be undone."
+        confirmLabel="Yes, Cancel Request"
+        onCancel={() => setConfirmCancel(null)}
+        onConfirm={() => {
+          updateStatus(confirmCancel, 'Cancelled');
+          setConfirmCancel(null);
+        }}
+      />
 
       {showForm && (
         <div className="fixed inset-0 bg-neutral-text-primary/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -258,6 +269,14 @@ export default function Maintenance() {
           </div>
         </div>
       )}
+
+      {/* FAB */}
+      <button 
+        onClick={() => setShowForm(true)}
+        className="fixed bottom-6 right-6 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 hover:shadow-xl hover:-translate-y-1 transition-all z-40 font-semibold text-sm"
+      >
+        <Plus size={20} /> Raise Request
+      </button>
     </div>
   );
 }

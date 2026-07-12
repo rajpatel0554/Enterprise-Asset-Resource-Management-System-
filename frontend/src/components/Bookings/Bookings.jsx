@@ -171,12 +171,6 @@ export default function Bookings() {
           <h2 className="text-2xl font-bold text-neutral-text-primary">Resource Booking</h2>
           <p className="text-neutral-text-secondary text-sm mt-1">Reserve shared company assets like vehicles and equipment.</p>
         </div>
-        <button 
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg shadow-sm hover:bg-primary-700 transition-colors"
-        >
-          <Plus size={18} /> New Booking
-        </button>
       </div>
 
       <div className="flex-1 bg-white border border-neutral-border rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -187,9 +181,10 @@ export default function Bookings() {
           {loading ? (
             <div className="text-neutral-text-secondary text-sm">Loading bookings...</div>
           ) : bookings.length === 0 ? (
-            <div className="text-center text-neutral-text-secondary py-12">
-              <CalendarIcon size={32} className="mx-auto mb-3 opacity-50" />
-              <p>No upcoming bookings.</p>
+            <div className="text-center text-neutral-text-secondary py-16">
+              <CalendarIcon size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="font-semibold text-neutral-text-primary text-sm">No bookings found</p>
+              <p className="text-xs text-neutral-text-muted mt-1">No resource bookings have been made yet. Use the '+ New Booking' button to make your first booking.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -354,6 +349,13 @@ export default function Bookings() {
         </div>
       )}
 
+      {/* FAB */}
+      <button 
+        onClick={() => setShowForm(true)}
+        className="fixed bottom-6 right-6 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 hover:shadow-xl hover:-translate-y-1 transition-all z-40 font-semibold text-sm"
+      >
+        <Plus size={20} /> Book Resource
+      </button>
     </div>
   );
 }

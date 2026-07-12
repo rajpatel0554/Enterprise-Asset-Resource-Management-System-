@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Send, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import ConfirmationModal from '../Shared/ConfirmationModal';
 
 export default function Allocations() {
   const [activeAllocations, setActiveAllocations] = useState([]);
@@ -17,6 +18,8 @@ export default function Allocations() {
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const { showToast } = useToast();
+
+  const [confirmReject, setConfirmReject] = useState(null); // holds req.id to reject
 
   const fetchData = async () => {
     setLoading(true);
@@ -207,7 +210,7 @@ export default function Allocations() {
                             <CheckCircle size={16} /> Approve
                           </button>
                           <button 
-                            onClick={() => respondToTransfer(req.id, 'reject')}
+                            onClick={() => setConfirmReject(req.id)}
                             className="flex-1 bg-white border border-neutral-border hover:bg-neutral-50 text-status-danger-text py-1.5 rounded text-sm font-medium flex items-center justify-center gap-1 transition-colors"
                           >
                             <XCircle size={16} /> Reject
@@ -222,6 +225,19 @@ export default function Allocations() {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmReject !== null}
+        danger
+        title="Reject Transfer Request"
+        message="Are you sure you want to reject this transfer request? The requester will be notified."
+        confirmLabel="Yes, Reject"
+        onCancel={() => setConfirmReject(null)}
+        onConfirm={() => {
+          respondToTransfer(confirmReject, 'reject');
+          setConfirmReject(null);
+        }}
+      />
 
       {/* Transfer Form Modal */}
       {showTransferForm && (
