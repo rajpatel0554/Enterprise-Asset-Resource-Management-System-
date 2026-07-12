@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #E1F5EE;
+  --color-primary-100: #B3E5D3;
+  --color-primary-400: #1D9E75;
+  --color-primary-600: #0F6E56;
+  --color-primary-800: #085041;
+  --color-primary-900: #04342C;
+
+  --color-accent-50: #FAECE7;
+  --color-accent-400: #F0997B;
+  --color-accent-600: #D85A30;
+  --color-accent-800: #712B13;
+
+  --color-neutral-bg: #F7F6F2;
+  --color-neutral-surface: #FFFFFF;
+  --color-neutral-border: #E3E1D8;
+  --color-neutral-text-primary: #2C2C2A;
+  --color-neutral-text-secondary: #5F5E5A;
+  --color-neutral-text-muted: #888780;
+
+  /* Semantic status colors */
+  --color-status-success-text: #3B6D11;
+  --color-status-success-bg: #EAF3DE;
+  --color-status-active-text: #185FA5;
+  --color-status-active-bg: #E6F1FB;
+  --color-status-pending-text: #854F0B;
+  --color-status-pending-bg: #FAEEDA;
+  --color-status-danger-text: #A32D2D;
+  --color-status-danger-bg: #FCEBEB;
+  --color-status-inactive-text: #5F5E5A;
+  --color-status-inactive-bg: #F1EFE8;
+
+  --font-sans: "Inter", "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-neutral-bg);
+    color: var(--color-neutral-text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+  }
+}
