@@ -54,38 +54,49 @@ export default function Reports() {
             <BarChart size={18} className="text-primary-600" />
             <h3 className="font-semibold text-neutral-text-primary">Asset Status Distribution</h3>
           </div>
-          <div className="p-6 flex-1 flex items-end justify-around gap-4 pt-12 relative">
+          <div className="p-6 flex-1 flex flex-col pt-8 relative justify-between">
             {/* Background grid lines */}
-            <div className="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none opacity-20">
+            <div className="absolute inset-x-0 top-8 bottom-20 px-6 flex flex-col justify-between pointer-events-none opacity-20">
               <div className="w-full border-t border-neutral-500"></div>
               <div className="w-full border-t border-neutral-500"></div>
               <div className="w-full border-t border-neutral-500"></div>
               <div className="w-full border-t border-neutral-500"></div>
             </div>
 
-            {statusBreakdown.map((item, idx) => {
-              const heightPct = (item.count / maxCount) * 100;
-              let colorClass = 'bg-neutral-400';
-              if(item.status === 'Available') colorClass = 'bg-status-success-bg border-status-success-text border-t-4 text-status-success-text';
-              else if(item.status === 'Allocated') colorClass = 'bg-purple-100 border-purple-500 border-t-4 text-purple-700';
-              else if(item.status === 'Maintenance') colorClass = 'bg-orange-100 border-orange-500 border-t-4 text-orange-700';
-              else if(item.status === 'Lost' || item.status === 'Disposed') colorClass = 'bg-red-100 border-red-500 border-t-4 text-red-700';
+            {/* Bars container */}
+            <div className="flex-1 flex items-end justify-around gap-4 z-10 pb-4 h-48">
+              {statusBreakdown.map((item, idx) => {
+                const heightPct = (item.count / maxCount) * 100;
+                let colorClass = 'bg-status-inactive-bg border-status-inactive-text border-t-4 text-status-inactive-text';
+                if(item.status === 'Available') colorClass = 'bg-status-success-bg border-status-success-text border-t-4 text-status-success-text';
+                else if(item.status === 'Allocated') colorClass = 'bg-status-active-bg border-status-active-text border-t-4 text-status-active-text';
+                else if(item.status === 'Maintenance') colorClass = 'bg-status-pending-bg border-status-pending-text border-t-4 text-status-pending-text';
+                else if(item.status === 'Lost' || item.status === 'Disposed' || item.status === 'Out of Service') colorClass = 'bg-status-danger-bg border-status-danger-text border-t-4 text-status-danger-text';
 
-              return (
-                <div key={idx} className="flex flex-col items-center justify-end gap-1.5 group w-full max-w-[80px] z-10 h-48">
-                  <div className="opacity-0 group-hover:opacity-100 font-bold transition-opacity bg-neutral-800 text-white text-xs px-2 py-1 rounded shadow-sm">
-                    {item.count}
+                return (
+                  <div key={idx} className="flex flex-col items-center justify-end gap-1.5 group w-full max-w-[80px] h-full">
+                    <div className="opacity-0 group-hover:opacity-100 font-bold transition-opacity bg-neutral-800 text-white text-xs px-2 py-1 rounded shadow-sm">
+                      {item.count}
+                    </div>
+                    <div 
+                      className={`w-full rounded-t transition-all duration-1000 ${colorClass}`}
+                      style={{ height: `${heightPct}%` }}
+                    ></div>
                   </div>
-                  <div 
-                    className={`w-full rounded-t transition-all duration-1000 ${colorClass}`}
-                    style={{ height: `${heightPct}%` }}
-                  ></div>
-                  <div className="text-xs font-semibold text-neutral-text-secondary -rotate-45 origin-top-left mt-2 whitespace-nowrap">
+                );
+              })}
+            </div>
+
+            {/* Labels container */}
+            <div className="flex justify-around gap-4 pt-3 border-t border-neutral-border z-10">
+              {statusBreakdown.map((item, idx) => (
+                <div key={idx} className="w-full max-w-[80px] text-center">
+                  <span className="text-xs font-semibold text-neutral-text-secondary block truncate" title={item.status}>
                     {item.status}
-                  </div>
+                  </span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
 
