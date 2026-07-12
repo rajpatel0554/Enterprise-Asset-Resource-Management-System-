@@ -27,6 +27,14 @@ export default function Assets() {
   const [requestTransferMode, setRequestTransferMode] = useState(false);
   const [transferReason, setTransferReason] = useState('');
 
+  // Register Asset State
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [newAssetName, setNewAssetName] = useState('');
+  const [newAssetCategory, setNewAssetCategory] = useState('');
+  const [newAssetCost, setNewAssetCost] = useState('');
+  const [newAssetPurchaseDate, setNewAssetPurchaseDate] = useState('');
+  const [newAssetDescription, setNewAssetDescription] = useState('');
+
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const isAdminOrManager = currentUser?.role === 'Admin' || currentUser?.role === 'AssetManager';
@@ -187,6 +195,48 @@ export default function Assets() {
       showToast('Error returning asset.', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegisterAsset = async (e) => {
+    e.preventDefault();
+    setActionLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/assets/assets/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: newAssetName,
+          category: newAssetCategory,
+          cost: newAssetCost ? parseFloat(newAssetCost) : null,
+          purchase_date: newAssetPurchaseDate || null,
+          description: newAssetDescription,
+          status: 'Available'
+        })
+      });
+
+      if (res.ok) {
+        showToast(`Successfully registered asset: ${newAssetName}`, 'success');
+        setShowRegisterModal(false);
+        setNewAssetName('');
+        setNewAssetCategory('');
+        setNewAssetCost('');
+        setNewAssetPurchaseDate('');
+        setNewAssetDescription('');
+        fetchAssets();
+      } else {
+        const errData = await res.json();
+        if (errData.name) showToast(`Name: ${errData.name[0]}`, 'error');
+        else if (errData.category) showToast(`Category: ${errData.category[0]}`, 'error');
+        else showToast('Failed to register asset.', 'error');
+      }
+    } catch (err) {
+      showToast('Error connecting to server.', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -451,12 +501,112 @@ export default function Assets() {
         </div>
       )}
 
+      {showRegisterModal && (
+        <div className="fixed inset-0 bg-neutral-text-primary/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-neutral-border flex justify-between items-center bg-neutral-surface">
+              <h3 className="font-bold text-lg text-neutral-text-primary">Register New Asset</h3>
+              <button 
+                onClick={() => setShowRegisterModal(false)} 
+                className="text-neutral-text-muted hover:text-neutral-text-primary transition-colors"
+              >
+                <XCircle size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleRegisterAsset} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Asset Name *</label>
+                <input 
+                  type="text"
+                  required
+                  value={newAssetName}
+                  onChange={(e) => setNewAssetName(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                  placeholder="e.g. MacBook Pro 14 inch"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Category *</label>
+                <select 
+                  required
+                  value={newAssetCategory}
+                  onChange={(e) => setNewAssetCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                >
+                  <option value="" disabled>Select a category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Cost ($)</label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newAssetCost}
+                    onChange={(e) => setNewAssetCost(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                    placeholder="2499.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Purchase Date</label>
+                  <input 
+                    type="date"
+                    value={newAssetPurchaseDate}
+                    onChange={(e) => setNewAssetPurchaseDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Description</label>
+                <textarea 
+                  rows={3}
+                  value={newAssetDescription}
+                  onChange={(e) => setNewAssetDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 resize-none"
+                  placeholder="Specs, configuration details, or identifier information..."
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowRegisterModal(false)}
+                  className="flex-1 px-4 py-2 text-neutral-text-secondary font-medium hover:bg-neutral-surface rounded-lg transition-colors border border-neutral-border"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={actionLoading}
+                  className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {actionLoading ? 'Registering...' : 'Register Asset'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* FAB */}
-      <button 
-        className="fixed bottom-6 right-6 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 hover:shadow-xl hover:-translate-y-1 transition-all z-40 font-semibold text-sm"
-      >
-        <Plus size={20} /> Register Asset
-      </button>
+      {isAdminOrManager && (
+        <button 
+          onClick={() => setShowRegisterModal(true)}
+          className="fixed bottom-6 right-6 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 hover:shadow-xl hover:-translate-y-1 transition-all z-40 font-semibold text-sm"
+        >
+          <Plus size={20} /> Register Asset
+        </button>
+      )}
     </div>
   );
 }
