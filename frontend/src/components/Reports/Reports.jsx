@@ -140,9 +140,9 @@ export default function Reports() {
             {/* Grid */}
             <div className="grid grid-cols-10 gap-2 my-auto justify-items-center">
               {heatmapData.map((day, idx) => {
-                let colorClass = 'bg-neutral-100 hover:bg-neutral-200'; // 0 bookings
-                if (day.count === 1) colorClass = 'bg-primary-100 hover:bg-primary-200 text-primary-800';
-                if (day.count === 2) colorClass = 'bg-primary-300 hover:bg-primary-400 text-primary-900';
+                let colorClass = 'bg-neutral-100 hover:bg-neutral-200 text-neutral-400'; // 0 bookings
+                if (day.count === 1) colorClass = 'bg-primary-100 hover:bg-primary-200 text-primary-900';
+                if (day.count === 2) colorClass = 'bg-primary-400 hover:bg-primary-500 text-white';
                 if (day.count >= 3) colorClass = 'bg-primary-600 hover:bg-primary-700 text-white';
 
                 return (
@@ -165,7 +165,7 @@ export default function Reports() {
               <span>Less</span>
               <div className="w-3.5 h-3.5 rounded bg-neutral-100 border border-neutral-200"></div>
               <div className="w-3.5 h-3.5 rounded bg-primary-100"></div>
-              <div className="w-3.5 h-3.5 rounded bg-primary-300"></div>
+              <div className="w-3.5 h-3.5 rounded bg-primary-400"></div>
               <div className="w-3.5 h-3.5 rounded bg-primary-600"></div>
               <span>More</span>
             </div>
