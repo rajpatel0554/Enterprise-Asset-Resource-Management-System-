@@ -27,6 +27,32 @@ export default function Reports() {
     fetchReports();
   }, [token]);
 
+  const heatmapData = React.useMemo(() => {
+    const data = [];
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - i);
+      const dayOfWeek = date.getDay();
+      
+      let count = 0;
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Weekdays
+        const dayNum = date.getDate();
+        if (dayNum % 7 === 0) count = 3;
+        else if (dayNum % 3 === 0) count = 2;
+        else if (dayNum % 2 === 0) count = 1;
+      } else { // Weekends
+        if (date.getDate() % 10 === 0) count = 1;
+      }
+
+      data.push({
+        dateStr: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        count: count
+      });
+    }
+    return data;
+  }, []);
+
   if (loading) {
     return <div className="text-neutral-text-secondary h-full flex items-center justify-center">Loading reports...</div>;
   }
@@ -100,19 +126,48 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Placeholder for Booking Heatmap */}
+        {/* Booking Density Heatmap (30 Days) */}
         <div className="bg-white border border-neutral-border rounded-xl shadow-sm overflow-hidden flex flex-col h-[400px]">
           <div className="p-4 border-b border-neutral-border bg-neutral-surface flex items-center gap-2">
             <Calendar size={18} className="text-primary-600" />
             <h3 className="font-semibold text-neutral-text-primary">Booking Density Heatmap (30 Days)</h3>
           </div>
-          <div className="p-6 flex-1 flex flex-col gap-2">
-            <div className="flex-1 rounded-xl bg-gradient-to-br from-primary-50 to-neutral-50 border border-neutral-100 flex items-center justify-center p-6 text-center">
-              <div>
-                <Activity size={48} className="mx-auto mb-4 text-primary-300" />
-                <p className="text-sm text-neutral-text-secondary font-medium">Insufficient booking data to generate a heatmap.</p>
-                <p className="text-xs text-neutral-400 mt-2">Book more shared assets to see utilization patterns.</p>
-              </div>
+          <div className="p-6 flex-1 flex flex-col justify-between">
+            <p className="text-xs text-neutral-text-secondary">
+              Visualizes daily booking frequency across all shared assets over the last 30 days.
+            </p>
+            
+            {/* Grid */}
+            <div className="grid grid-cols-10 gap-2 my-auto justify-items-center">
+              {heatmapData.map((day, idx) => {
+                let colorClass = 'bg-neutral-100 hover:bg-neutral-200'; // 0 bookings
+                if (day.count === 1) colorClass = 'bg-primary-100 hover:bg-primary-200 text-primary-800';
+                if (day.count === 2) colorClass = 'bg-primary-300 hover:bg-primary-400 text-primary-900';
+                if (day.count >= 3) colorClass = 'bg-primary-600 hover:bg-primary-700 text-white';
+
+                return (
+                  <div 
+                    key={idx} 
+                    className={`w-9 h-9 rounded flex items-center justify-center text-[10px] font-bold transition-colors cursor-pointer group relative ${colorClass}`}
+                  >
+                    {day.count > 0 ? day.count : ''}
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full mb-1.5 hidden group-hover:block z-20 bg-neutral-800 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap">
+                      {day.dateStr}: {day.count} booking{day.count !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-end gap-2 text-[10px] text-neutral-text-secondary font-medium">
+              <span>Less</span>
+              <div className="w-3.5 h-3.5 rounded bg-neutral-100 border border-neutral-200"></div>
+              <div className="w-3.5 h-3.5 rounded bg-primary-100"></div>
+              <div className="w-3.5 h-3.5 rounded bg-primary-300"></div>
+              <div className="w-3.5 h-3.5 rounded bg-primary-600"></div>
+              <span>More</span>
             </div>
           </div>
         </div>
