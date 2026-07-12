@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from accounts.models import Department
 from assets.models import AssetCategory, Asset, AssetStatusLog
+from allocations.models import Allocation
 
 User = get_user_model()
 
@@ -42,7 +43,16 @@ class Command(BaseCommand):
                 user.save()
                 self.stdout.write(f'Created User: {u["username"]} ({u["role"]})')
 
-        sys_admin = User.objects.filter(username='admin').first()
+        sys_admin, created = User.objects.get_or_create(username='admin', defaults={
+            'email': 'admin@example.com',
+            'role': 'Admin',
+            'is_staff': True,
+            'is_superuser': True,
+        })
+        if created:
+            sys_admin.set_password('admin123')
+            sys_admin.save()
+            self.stdout.write('Created Superuser: admin (password: admin123)')
 
         # 3. Asset Categories
         categories_data = [
@@ -89,5 +99,22 @@ class Command(BaseCommand):
                     changed_by=sys_admin,
                     notes='Seeded initial asset data'
                 )
+
+                if a['name'] == 'MacBook Air M1':
+                    Allocation.objects.create(
+                        asset=asset,
+                        employee=User.objects.get(username='john.doe'),
+                        allocated_by=sys_admin,
+                        is_active=True,
+                        notes='Initial allocation'
+                    )
+                elif a['name'] == 'Standing Desk':
+                    Allocation.objects.create(
+                        asset=asset,
+                        employee=User.objects.get(username='bob.manager'),
+                        allocated_by=sys_admin,
+                        is_active=True,
+                        notes='Initial allocation'
+                    )
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded database!'))

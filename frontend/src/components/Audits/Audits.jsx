@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, Play, CheckCircle, XCircle, Search, FileText } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function Audits() {
   const [cycles, setCycles] = useState([]);
@@ -13,6 +14,7 @@ export default function Audits() {
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const isAdminOrManager = currentUser?.role === 'Admin' || currentUser?.role === 'AssetManager';
+  const { showToast } = useToast();
 
   const fetchCycles = async () => {
     setLoading(true);
@@ -56,10 +58,10 @@ export default function Audits() {
         setCycleName('');
         fetchCycles();
       } else {
-        alert('Failed to create audit cycle.');
+        showToast('Failed to create audit cycle.', 'error');
       }
     } catch (err) {
-      alert('Error communicating with server.');
+      showToast('Error communicating with server.', 'error');
     }
   };
 
@@ -70,15 +72,15 @@ export default function Audits() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        alert(successMsg);
+        showToast(successMsg, 'success');
         fetchCycles();
         if (selectedCycle) fetchEntries(selectedCycle.id);
       } else {
         const errorData = await res.json();
-        alert(errorData.detail || 'Action failed.');
+        showToast(errorData.detail || 'Action failed.', 'error');
       }
     } catch (err) {
-      alert('Error communicating with server.');
+      showToast('Error communicating with server.', 'error');
     }
   };
 
@@ -94,7 +96,7 @@ export default function Audits() {
         fetchCycles();
       }
     } catch (err) {
-      alert('Error communicating with server.');
+      showToast('Error communicating with server.', 'error');
     }
   };
 
@@ -293,3 +295,4 @@ export default function Audits() {
     </div>
   );
 }
+

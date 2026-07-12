@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, Filter, Plus, FileText, ChevronRight, UserPlus, CornerDownLeft } from 'lucide-react';
+import { Search, Filter, Package, Tag, FileText, ChevronRight, CheckCircle, XCircle, CornerDownLeft, UserPlus, ArrowRightLeft, Plus } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function Assets() {
   const [assets, setAssets] = useState([]);
@@ -19,9 +20,15 @@ export default function Assets() {
   const [allocationNotes, setAllocationNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  const [conflictError, setConflictError] = useState(null);
+  const [conflictHolderId, setConflictHolderId] = useState(null);
+  const [requestTransferMode, setRequestTransferMode] = useState(false);
+  const [transferReason, setTransferReason] = useState('');
+
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const isAdminOrManager = currentUser?.role === 'Admin' || currentUser?.role === 'AssetManager';
+  const { showToast } = useToast();
 
   const fetchAssets = async () => {
     setLoading(true);
@@ -60,6 +67,10 @@ export default function Assets() {
     setSelectedAsset(asset);
     setAllocatedEmployee('');
     setAllocationNotes('');
+    setConflictError(null);
+    setConflictHolderId(null);
+    setRequestTransferMode(false);
+    setTransferReason('');
     setShowAllocateModal(true);
   };
 
@@ -82,21 +93,56 @@ export default function Assets() {
 
       if (res.ok) {
         setShowAllocateModal(false);
-        alert(`Successfully allocated ${selectedAsset.name}!`);
+        showToast(`Successfully allocated ${selectedAsset.name}!`, 'success');
         fetchAssets();
       } else {
         const errorData = await res.json();
         // Extract any validation messages nicely without raw json formatting
-        if (errorData.asset) {
-          alert(errorData.asset);
+        if (errorData.asset && errorData.holder_id) {
+          setConflictError(errorData.asset);
+          setConflictHolderId(errorData.holder_id);
+        } else if (errorData.asset) {
+          showToast(errorData.asset, 'error');
         } else if (errorData.non_field_errors) {
-          alert(errorData.non_field_errors[0]);
+          showToast(errorData.non_field_errors[0], 'error');
         } else {
-          alert('Failed to allocate asset.');
+          showToast('Failed to allocate asset.', 'error');
         }
       }
     } catch (err) {
-      alert('Error communicating with server.');
+      showToast('Error communicating with server.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRequestTransfer = async (e) => {
+    e.preventDefault();
+    setActionLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/allocations/transfers/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          asset: selectedAsset.id,
+          from_employee: conflictHolderId,
+          to_employee: allocatedEmployee,
+          reason: transferReason
+        })
+      });
+      if (res.ok) {
+        setShowAllocateModal(false);
+        showToast('Transfer request submitted successfully!', 'success');
+        fetchAssets();
+      } else {
+        const errData = await res.json();
+        showToast(errData.detail || 'Failed to submit transfer request.', 'error');
+      }
+    } catch (err) {
+      showToast('Error connecting to server.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -128,15 +174,15 @@ export default function Assets() {
           });
 
           if (patchRes.ok) {
-            alert('Asset successfully returned and is now available.');
+            showToast('Asset successfully returned and is now available.', 'success');
             fetchAssets();
             return;
           }
         }
       }
-      alert('Could not find active allocation for this asset.');
+      showToast('Could not find active allocation for this asset.', 'warning');
     } catch (err) {
-      alert('Error returning asset.');
+      showToast('Error returning asset.', 'error');
     } finally {
       setLoading(false);
     }
@@ -293,13 +339,32 @@ export default function Assets() {
         <div className="fixed inset-0 bg-neutral-text-primary/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-neutral-border flex justify-between items-center">
-              <h3 className="font-bold text-lg text-neutral-text-primary">Allocate Asset</h3>
-              <button onClick={() => setShowAllocateModal(false)} className="text-neutral-text-muted hover:text-neutral-text-primary text-xl font-semibold">
-                ×
+              <h3 className="font-bold text-lg text-neutral-text-primary">
+                {requestTransferMode ? 'Request Transfer' : 'Allocate Asset'}
+              </h3>
+              <button onClick={() => setShowAllocateModal(false)} className="text-neutral-text-muted hover:text-neutral-text-primary">
+                <XCircle size={20} />
               </button>
             </div>
             
-            <form onSubmit={handleAllocateAsset} className="p-6 space-y-4">
+            <form onSubmit={requestTransferMode ? handleRequestTransfer : handleAllocateAsset} className="p-6 space-y-4">
+              {conflictError && !requestTransferMode && (
+                <div className="p-3 bg-red-50 text-red-800 border border-red-200 rounded-lg text-sm mb-4">
+                  <p className="font-medium flex items-center gap-2">
+                    <XCircle size={16} /> {conflictError}
+                  </p>
+                  {conflictHolderId && (
+                    <button 
+                      type="button" 
+                      onClick={() => setRequestTransferMode(true)} 
+                      className="mt-2 flex items-center gap-1 font-semibold text-primary-600 hover:text-primary-700 underline"
+                    >
+                      <ArrowRightLeft size={14} /> Request Transfer Instead
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Asset details</label>
                 <div className="font-mono text-sm text-neutral-text-primary bg-neutral-surface px-3 py-2 rounded-lg border border-neutral-border">
@@ -307,46 +372,62 @@ export default function Assets() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Allocate to Employee</label>
-                <select 
-                  required
-                  value={allocatedEmployee}
-                  onChange={(e) => setAllocatedEmployee(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
-                >
-                  <option value="" disabled>Select an employee</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>
-                  ))}
-                </select>
-              </div>
+              {!requestTransferMode ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Allocate to Employee</label>
+                    <select 
+                      required
+                      value={allocatedEmployee}
+                      onChange={(e) => setAllocatedEmployee(e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                    >
+                      <option value="" disabled>Select an employee</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Allocation Notes</label>
-                <textarea 
-                  rows={3}
-                  value={allocationNotes}
-                  onChange={(e) => setAllocationNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 resize-none"
-                  placeholder="Additional handoff details..."
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Allocation Notes</label>
+                    <textarea 
+                      rows={3}
+                      value={allocationNotes}
+                      onChange={(e) => setAllocationNotes(e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 resize-none"
+                      placeholder="Additional handoff details..."
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-text-secondary mb-1">Transfer Reason</label>
+                  <textarea 
+                    required
+                    rows={3}
+                    value={transferReason}
+                    onChange={(e) => setTransferReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-border rounded-lg outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 resize-none"
+                    placeholder="Why do you need to transfer this asset?"
+                  />
+                </div>
+              )}
 
               <div className="pt-4 flex gap-3">
                 <button 
                   type="button" 
-                  onClick={() => setShowAllocateModal(false)}
+                  onClick={() => requestTransferMode ? setRequestTransferMode(false) : setShowAllocateModal(false)}
                   className="flex-1 px-4 py-2 text-neutral-text-secondary font-medium hover:bg-neutral-surface rounded-lg transition-colors"
                 >
-                  Cancel
+                  {requestTransferMode ? 'Back' : 'Cancel'}
                 </button>
                 <button 
                   type="submit" 
-                  disabled={actionLoading}
+                  disabled={actionLoading || (!requestTransferMode && !allocatedEmployee) || (requestTransferMode && !transferReason)}
                   className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {actionLoading ? 'Allocating...' : 'Confirm Allocation'}
+                  {actionLoading ? 'Processing...' : (requestTransferMode ? 'Submit Transfer' : 'Confirm Allocation')}
                 </button>
               </div>
             </form>

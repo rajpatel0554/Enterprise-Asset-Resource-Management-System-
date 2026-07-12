@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PenTool, Plus, CheckCircle, Clock, Search, Wrench, XCircle } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function Maintenance() {
   const [requests, setRequests] = useState([]);
@@ -14,6 +15,7 @@ export default function Maintenance() {
 
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
+  const { showToast } = useToast();
   const isAdminOrManager = currentUser?.role === 'Admin' || currentUser?.role === 'AssetManager';
 
   const fetchData = async () => {
@@ -60,13 +62,13 @@ export default function Maintenance() {
         setSelectedAsset('');
         setDescription('');
         setPriority('Medium');
-        alert('Maintenance request submitted successfully!');
+        showToast('Maintenance request submitted successfully!', 'success');
         fetchData();
       } else {
-        alert('Failed to submit request.');
+        showToast('Failed to submit request.', 'error');
       }
     } catch (err) {
-      alert('Error connecting to server.');
+      showToast('Error connecting to server.', 'error');
     }
   };
 
@@ -83,10 +85,10 @@ export default function Maintenance() {
       if (res.ok) {
         fetchData();
       } else {
-        alert('Failed to update status.');
+        showToast('Failed to update status.', 'error');
       }
     } catch (err) {
-      alert('Error connecting to server.');
+      showToast('Error connecting to server.', 'error');
     }
   };
 
@@ -259,3 +261,5 @@ export default function Maintenance() {
     </div>
   );
 }
+
+

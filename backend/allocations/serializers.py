@@ -23,7 +23,15 @@ class AllocationSerializer(serializers.ModelSerializer):
                 active_allocs = Allocation.objects.filter(asset=asset, is_active=True)
                 
             if active_allocs.exists():
-                raise serializers.ValidationError({"asset": "This asset is already actively allocated to someone else."})
+                active_alloc = active_allocs.first()
+                holder_name = active_alloc.employee.get_full_name() or active_alloc.employee.username
+                holder_id = active_alloc.employee.id
+                
+                # We return a specific error that the frontend can parse or display
+                raise serializers.ValidationError({
+                    "asset": f"This asset is currently held by {holder_name}.",
+                    "holder_id": holder_id
+                })
         return data
 
 class TransferRequestSerializer(serializers.ModelSerializer):

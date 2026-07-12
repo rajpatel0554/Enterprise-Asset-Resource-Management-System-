@@ -54,27 +54,33 @@ class TransferRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
+        from django.db import transaction
         transfer = self.get_object()
         if transfer.status != 'Pending':
             return Response({'detail': 'Only pending requests can be approved.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        transfer.status = 'Approved'
-        transfer.save(update_fields=['status'])
+        try:
+            with transaction.atomic():
+                transfer.status = 'Approved'
+                transfer.save(update_fields=['status'])
 
-        # End old allocation
-        old_alloc = Allocation.objects.filter(asset=transfer.asset, employee=transfer.from_employee, is_active=True).first()
-        if old_alloc:
-            old_alloc.is_active = False
-            old_alloc.returned_at = timezone.now()
-            old_alloc.save(update_fields=['is_active', 'returned_at'])
+                # End old allocation
+                old_alloc = Allocation.objects.filter(asset=transfer.asset, employee=transfer.from_employee, is_active=True).first()
+                if old_alloc:
+                    old_alloc.is_active = False
+                    old_alloc.returned_at = timezone.now()
+                    old_alloc.save(update_fields=['is_active', 'returned_at'])
 
-        # Create new allocation
-        Allocation.objects.create(
-            asset=transfer.asset,
-            employee=transfer.to_employee,
-            allocated_by=request.user,
-            notes=f'Transferred from {transfer.from_employee.username}. Reason: {transfer.reason}'
-        )
+                # Create new allocation
+                Allocation.objects.create(
+                    asset=transfer.asset,
+                    employee=transfer.to_employee,
+                    allocated_by=request.user,
+                    notes=f'Transferred from {transfer.from_employee.username}. Reason: {transfer.reason}'
+                )
+        except Exception as e:
+            return Response({'detail': f'Failed to process transaction: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+            
         return Response({'status': 'approved'})
 
     @action(detail=True, methods=['post'])

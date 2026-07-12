@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Send, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function Allocations() {
   const [activeAllocations, setActiveAllocations] = useState([]);
@@ -15,6 +16,7 @@ export default function Allocations() {
 
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
+  const { showToast } = useToast();
 
   const fetchData = async () => {
     setLoading(true);
@@ -74,12 +76,14 @@ export default function Allocations() {
         setShowTransferForm(false);
         setReason('');
         setToEmployeeId('');
+        showToast('Transfer request submitted successfully!', 'success');
         fetchData();
       } else {
-        alert('Failed to submit transfer request.');
+        const errData = await res.json();
+        showToast(errData.detail || 'Failed to submit transfer request.', 'error');
       }
     } catch (err) {
-      alert('Error connecting to server.');
+      showToast('Error connecting to server.', 'error');
     }
   };
 
@@ -90,12 +94,14 @@ export default function Allocations() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
+        showToast(`Transfer request ${action}d successfully!`, 'success');
         fetchData();
       } else {
-        alert(`Failed to ${action} transfer.`);
+        const errData = await res.json();
+        showToast(errData.detail || `Failed to ${action} transfer.`, 'error');
       }
     } catch (err) {
-      alert('Error connecting to server.');
+      showToast('Error connecting to server.', 'error');
     }
   };
 
@@ -281,6 +287,7 @@ export default function Allocations() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

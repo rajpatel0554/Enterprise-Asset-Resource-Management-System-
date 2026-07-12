@@ -11,9 +11,12 @@ import Audits from './components/Audits/Audits';
 import OrgSetup from './components/OrgSetup/OrgSetup';
 import Reports from './components/Reports/Reports';
 
+import { ToastProvider } from './contexts/ToastContext';
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
       <Routes>
         {/* Auth Route */}
         <Route path="/login" element={<Login />} />
@@ -34,5 +37,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+    </ToastProvider>
   );
 }

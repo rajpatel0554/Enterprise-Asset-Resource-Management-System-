@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Tags, Users, Plus, Edit2, ShieldAlert } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function OrgSetup() {
   const [activeTab, setActiveTab] = useState('departments');
@@ -8,6 +9,7 @@ export default function OrgSetup() {
   const [error, setError] = useState('');
 
   const token = localStorage.getItem('token');
+  const { showToast } = useToast();
   const currentUser = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
@@ -54,10 +56,10 @@ export default function OrgSetup() {
       if (res.ok) {
         fetchData();
       } else {
-        alert('Failed to update role.');
+        showToast('Failed to update role.', 'error');
       }
     } catch (err) {
-      alert('Error communicating with server.');
+      showToast('Error communicating with server.', 'error');
     }
   };
 
@@ -201,3 +203,4 @@ export default function OrgSetup() {
     </div>
   );
 }
+
